@@ -26,7 +26,6 @@ if __name__ == "__main__":
 
     # Create mavlink thread object
     mavObj = mavClass( serialObj, pymavlink )
-    mavObj.startRWLoop() # How should the startup behaviour act? Connect immediatly/wait until start?
 
     # Create mavlink thread
     mavThread = threading.Thread( target = mavObj.loop, daemon = True )
@@ -44,7 +43,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
 
-    mavObj.stopRWLoop()
+    mavObj.stoploop()
+    serialObj.closePort()
 
     print('Bye')
 

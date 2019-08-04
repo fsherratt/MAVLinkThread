@@ -94,49 +94,14 @@ class mavThread:
         return self._mavObj.srcComponent
 
     # --------------------------------------------------------------------------
-    # startRWLoop
-    # Starts the serial read/write loop. When
-    # starting the serial buffer is flushed and any data written to the
-    # write queue is cleared. THe r/w loop can only be started if the serial
-    # port is open
-    # param null
-    # return boolean True if successfully
-    # False otherwise
-    # --------------------------------------------------------------------------
-    def startRWLoop( self ):
-        if not self._ser.isOpen():
-            self._ser.openPort()
-
-        self._ser.flush()
-        
-        # Flush messages in write queue
-        try:
-            while True:
-                self._writeQueue.get_nowait()
-        except queue.Empty:
-            pass
-
-        return True
-
-    # --------------------------------------------------------------------------
     # stopRWLoop
     # Stops the serial R/W loop by setting _intentionallyExit to True. Stopping 
     # the serial loop does not close the serial port
     # param null
     # return void
     # --------------------------------------------------------------------------
-    def stopRWLoop( self ):
+    def stopLoop( self ):
         self._intentionallyExit = True
-
-    # --------------------------------------------------------------------------
-    # closeSerialPort
-    # Close the serial port if open and also stop any associated serialRW loops.
-    # param null
-    # return void
-    # --------------------------------------------------------------------------
-    def closeSerialPort( self ):
-        self.stopRWLoop()
-        self._ser.closePort()
 
     # --------------------------------------------------------------------------
     # queueOutputMsg
@@ -164,6 +129,16 @@ class mavThread:
     # return void
     # --------------------------------------------------------------------------
     def loop(self):
+        self._intentionallyExit = False
+
+        with self._writeQueue.mutex:
+            self._writeQueue.clear()
+
+        if not self._ser.isOpen():
+            self._ser.openPort()
+
+        self._ser.flush()
+
         while not self._intentionallyExit:
             try:
                 
@@ -186,8 +161,6 @@ class mavThread:
             except Exception:
                 traceback.print_exc(file=sys.stdout)
                 raise Exception('MAVLink thread %s exited unexpectedly' % self._name)
-
-        self.closeSerialPort()
 
         print('MAVLink thread %s closed' % self._name)
 
@@ -260,17 +233,13 @@ class mavThread:
     def _readMsg( self ):
         mList = None
 
-        try:
-            while mList is None and self._ser.dataAvailable():
-                try:
-                    x = self._ser.read()
-                    mList = self._mavObj.parse_buffer(x)
-                    
-                except self._mavLib.MAVError as e:
-                    print( e )
-
-        except Exception as e:
-            raise e
+        while mList is None and self._ser.dataAvailable():
+            try:
+                x = self._ser.read()
+                mList = self._mavObj.parse_buffer(x)
+                
+            except self._mavLib.MAVError as e:
+                print( e )
 
         return mList
 

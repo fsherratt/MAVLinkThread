@@ -7,6 +7,8 @@
 
 import threading
 import time
+import traceback
+import sys
 
 from mavlinkThread import mavSerial, mavThread
 import pymavlink.dialects.v10.ardupilotmega as pymavlink
@@ -22,10 +24,18 @@ class mavClass( mavThread.mavThread ):
             try:
                 super( mavClass, self).loop()
             except:
-                self._ser.closePort()
+                traceback.print_exc(file=sys.stdout)
+                self.restartConnection()
 
-                time.sleep(1)
-                self.startRWLoop()
+    def restartConnection(self):
+        time.sleep(1)
+
+        try:
+            self._ser.closePort()
+            self._ser.openPort()
+            self.startLoop()
+        except:
+            traceback.print_exc(file=sys.stdout)        
 
 
 if __name__ == "__main__":
@@ -35,7 +45,6 @@ if __name__ == "__main__":
 
     # Create mavlink thread object
     mavObj = mavClass( serialObj, pymavlink )
-    mavObj.startRWLoop() # How should the startup behaviour act? Connect immediatly/wait until start?
 
     # Create mavlink thread
     mavThread = threading.Thread( target = mavObj.loop, daemon = True )
@@ -53,7 +62,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
 
-    mavObj.stopRWLoop()
+    mavObj.stopLoop()
+    serialObj.closePort()
 
     print('Bye')
 
