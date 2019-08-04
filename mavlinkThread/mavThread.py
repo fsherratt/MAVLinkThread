@@ -62,7 +62,7 @@ class mavThread:
         self._mavSystemID = sysid
         self._mavComponentID = cmpid
 
-        self._writeQueue = queue.Queue()
+        self._writeQueue = queue.PriorityQueue()
 
         self._intentionallyExit = False
         
@@ -143,13 +143,15 @@ class mavThread:
     # Add mavlink messages to writing queue, does not accept messages when
     # RW loop is paused.
     # param: msg - mavlink message to add to the queue
+    # param: priority - message priority, specify priority of message. A higher
+    # number gives a higher priority. (default 5)
     # return: boolean True if successful, false otherwise, exception if an error
     # --------------------------------------------------------------------------
-    def queueOutputMsg( self, msg ):
+    def queueOutputMsg( self, msg, priority = 5 ):
         if not isinstance( msg, self._mavLib.MAVLink_message ):
            return False
 
-        self._writeQueue.put( msg )
+        self._writeQueue.put( priority, msg )
 
         return True
 
