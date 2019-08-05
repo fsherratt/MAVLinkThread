@@ -12,6 +12,7 @@ import time
 from mavlinkThread import mavSerial, mavThread
 import pymavlink.dialects.v10.ardupilotmega as pymavlink
 
+
 # Print out all incoming message
 class mavClass( mavThread.mavThread ):
     def _processReadMsg( self, msgList ):
@@ -28,7 +29,8 @@ if __name__ == "__main__":
     mavObj = mavClass( serialObj, pymavlink )
 
     # Create mavlink thread
-    mavThread = threading.Thread( target = mavObj.loop, daemon = True )
+    mavThread = threading.Thread( target = mavObj.loop )
+    mavThread.daemon = True
     mavThread.start()
 
     # Send heartbeat message at 2Hz
@@ -43,7 +45,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         pass
 
-    mavObj.stoploop()
+    mavObj.stopLoop()
     serialObj.closePort()
 
     print('Bye')

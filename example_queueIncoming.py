@@ -41,7 +41,8 @@ if __name__ == "__main__":
     mavObj = mavClass( serialObj, pymavlink, readQueue )
 
     # Create mavlink thread
-    mavThread = threading.Thread( target = mavObj.loop, daemon = True )
+    mavThread = threading.Thread( target = mavObj.loop )
+    mavThread.daemon = True
     mavThread.start()
 
     try:

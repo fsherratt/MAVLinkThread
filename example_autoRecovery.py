@@ -11,7 +11,7 @@ import traceback
 import sys
 
 from mavlinkThread import mavSerial, mavThread
-import pymavlink.dialects.v10.ardupilotmega as pymavlink
+import pymavlink.dialects.v20.ardupilotmega as pymavlink
 
 # Print out all incoming message
 class mavClass( mavThread.mavThread ):
@@ -47,7 +47,8 @@ if __name__ == "__main__":
     mavObj = mavClass( serialObj, pymavlink )
 
     # Create mavlink thread
-    mavThread = threading.Thread( target = mavObj.loop, daemon = True )
+    mavThread = threading.Thread( target = mavObj.loop )
+    mavThread.daemon = True
     mavThread.start()
 
     # Send heartbeat message at 2Hz
