@@ -116,7 +116,7 @@ class mavThread:
         if not isinstance( msg, self._mavLib.MAVLink_message ):
            return False
 
-        self._writeQueue.put( priority, msg )
+        self._writeQueue.put( (priority, msg) )
 
         return True
 
@@ -130,9 +130,6 @@ class mavThread:
     # --------------------------------------------------------------------------
     def loop(self):
         self._intentionallyExit = False
-
-        with self._writeQueue.mutex:
-            self._writeQueue.clear()
 
         if not self._ser.isOpen():
             self._ser.openPort()
@@ -189,8 +186,8 @@ class mavThread:
     # --------------------------------------------------------------------------
     def _getWriteMsg(self):
         try:
-            return self._writeQueue.get_nowait()
-
+            msg = self._writeQueue.get_nowait()
+            return msg[1]
         except queue.Empty:
             return None
 
