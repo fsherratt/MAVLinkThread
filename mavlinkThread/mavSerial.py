@@ -81,9 +81,9 @@ class mavSerial( commAbstract ):
 
         try:
             b = self._serialObj.read( numBytes )
-
-        except Exception as e:
-            raise e
+        
+        except serial.SerialTimeoutException:
+            traceback.print_exc(file=sys.stdout)
 
         finally:
             self._readLock.release()
@@ -102,8 +102,8 @@ class mavSerial( commAbstract ):
         try:
             self._serialObj.write( b )
 
-        except Exception as e:
-            raise e
+        except serial.SerialTimeoutException:
+            traceback.print_exc(file=sys.stdout)
 
         finally:
             self._writeLock.release()
