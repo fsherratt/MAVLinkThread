@@ -19,7 +19,7 @@ if sys.version_info.major == 3:
 else:
     import Queue as queue
 
-from mavlinkThread import commAbstract
+from .commAbstract import commAbstract
 
 # ------------------------------------------------------------------------------
 # MAVAbstract
@@ -48,7 +48,7 @@ class mavThread:
     # --------------------------------------------------------------------------
     def __init__( self, conn, mavLib, shortHand = '', sysid = 1, cmpid = 1 ):
         
-        if isinstance( conn, commAbstract.commAbstract ):
+        if isinstance( conn, commAbstract ):
             self._ser = conn
         else:
             raise Exception( 'Conn must be of type `commAbstract`' )

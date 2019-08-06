@@ -11,7 +11,7 @@ import serial
 import traceback
 import sys
 
-from mavlinkThread.commAbstract import commAbstract
+from .commAbstract import commAbstract
 
 class mavSerial( commAbstract ):
     # --------------------------------------------------------------------------

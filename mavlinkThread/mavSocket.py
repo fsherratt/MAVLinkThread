@@ -9,7 +9,7 @@
 import threading
 import socket
 import traceback
-from mavlinkThread import commAbstract
+from .commAbstract import commAbstract
 
 class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
