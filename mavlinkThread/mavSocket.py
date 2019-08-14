@@ -10,6 +10,7 @@ import threading
 import socket
 import traceback
 from .commAbstract import commAbstract
+import select
 
 class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
