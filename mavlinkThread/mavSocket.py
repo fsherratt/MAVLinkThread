@@ -11,6 +11,7 @@ import socket
 import traceback
 from .commAbstract import commAbstract
 import select
+import time
 
 class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
