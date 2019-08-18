@@ -12,6 +12,7 @@ import traceback
 from .commAbstract import commAbstract
 import select
 import time
+import sys
 
 class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
