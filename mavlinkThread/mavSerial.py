@@ -83,6 +83,8 @@ class mavSerial( commAbstract ):
             b = self._serialObj.read( numBytes )
         
         except serial.SerialTimeoutException:
+            b = ''
+
             traceback.print_exc(file=sys.stdout)
 
         finally:

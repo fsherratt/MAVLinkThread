@@ -28,26 +28,20 @@ class mavSocket( commAbstract ):
 
     # return void
     # --------------------------------------------------------------------------
-    def __init__( self, broadcastPort, listenPort,
-                  broadcastAddress = '255.255.255.255', listenAddress = '',
-                  readTimeout = 0.01, buffSize = 1024, ):
+    def __init__( self, port, listenAddress = '', buffSize = 65535, ):
         
-        self._writePort = broadcastPort
-        self._readPort = listenPort
-
         self._sRead = None
         self._sWrite = None
 
-        self.readTimeout = readTimeout
         self.buffSize = buffSize
 
-        self._writeAddress = broadcastAddress
-        self._readAddress = listenAddress
+        self._readAddress = (socket.gethostbyname(listenAddress), int(port))
+        self._writeAddress = None
 
         self._writeLock = threading.Lock()
         self._readLock = threading.Lock()
 
-        self._open = False
+        self._connected = False
 
     # --------------------------------------------------------------------------
     # openPort
@@ -58,17 +52,28 @@ class mavSocket( commAbstract ):
     def openPort( self ):
         self._sRead = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self._sRead.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-        self._sRead.bind( ( self._readAddress, self._readPort ) )
-
-        self._sRead.settimeout( self.readTimeout )
+        self._sRead.setblocking(0)
 
         self._sWrite = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_BROADCAST, 1 )
-        self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+        self._sWrite.setblocking(0)
+        
+        self._sRead.bind( self._readAddress )
+        self.set_close_on_exec(self._sRead.fileno())  
 
-        self._sWrite.connect( ( self._writeAddress, self._writePort ) )
+    # --------------------------------------------------------------------------
+    # _openWritePort
+    # Once we have a write address we can make a connection
+    # param addr - 2-tuple of address and port
+    # return null
+    # --------------------------------------------------------------------------
+    def _openWritePort(self, addr):
+        self._writeAddress = addr
 
-        self._open = True
+        self._sWrite.connect( self._writeAddress )
+        self.set_close_on_exec(self._sWrite.fileno())
+
+        self._connected = True
 
     # --------------------------------------------------------------------------
     # closePort
@@ -77,11 +82,10 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def closePort( self ):
-        if self._open:
-            self._open = False
+        self._connected = False
 
-            self._sRead.close()
-            self._sWrite.close()
+        self._sRead.close()
+        self._sWrite.close()
 
     # --------------------------------------------------------------------------
     # read
@@ -93,10 +97,13 @@ class mavSocket( commAbstract ):
         self._readLock.acquire()
 
         try:
-            m = self._sRead.recv( self.buffSize )
+            m, addr = self._sRead.recvfrom( self.buffSize )
 
-        except socket.timeout:
-            m =  None
+            if self._writeAddress is None:
+                self._openWritePort(addr)
+
+        except(socket.timeout, BlockingIOError):
+            m =  ''
 
         finally:
             self._readLock.release()
@@ -111,9 +118,14 @@ class mavSocket( commAbstract ):
     # return raises an Exception if there is an error
     # --------------------------------------------------------------------------
     def write( self, b ):
+        if self._writeAddress is None:
+            return
+
         self._writeLock.acquire()
+
         try:
-            self._sWrite.sendall( b )
+            self._sWrite.sendto(b, self._writeAddress)
+            # self._sWrite.sendall( b )
             
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -128,7 +140,7 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def isOpen( self ):
-        return self._open
+        return self._connected
 
     # --------------------------------------------------------------------------
     # dataAvailable
@@ -137,11 +149,6 @@ class mavSocket( commAbstract ):
     # return True if data available to read, False otherwise
     # --------------------------------------------------------------------------
     def dataAvailable( self ):
-        read,_,_ = select.select( [self._sRead], [], [], self.readTimeout )
-
-        if len(read) > 0:
-            return True
-
         return False
 
     # --------------------------------------------------------------------------
@@ -151,8 +158,17 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def flush( self ):
-        while self.dataAvailable():
-            self.read()
-            time.sleep(0.01)
+        pass
+        # while self.dataAvailable():
+        #     self.read()
+        #     time.sleep(0.01)
 
+    def set_close_on_exec(self, fd):
+        try:
+            import fcntl
+            flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+            flags |= fcntl.FD_CLOEXEC
+            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+        except:
+            pass
 # ------------------------------------ EOF -------------------------------------

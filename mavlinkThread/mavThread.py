@@ -159,7 +159,7 @@ class mavThread:
 
             except Exception:
                 traceback.print_exc(file=sys.stdout)
-                raise Exception('MAVLink thread %s exited unexpectedly' % self._name)
+                raise Exception('MAVLink thread exited unexpectedly')
 
         print('MAVLink thread %s closed' % self._name)
 
@@ -232,9 +232,12 @@ class mavThread:
     def _readMsg( self ):
         mList = None
 
-        while mList is None and self._ser.dataAvailable():
+        while True:
             try:
                 x = self._ser.read()
+                if x == '':
+                    break
+
                 mList = self._mavObj.parse_buffer(x)
                 
             except self._mavLib.MAVError as e:
