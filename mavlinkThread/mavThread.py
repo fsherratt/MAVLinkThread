@@ -61,6 +61,7 @@ class mavThread:
 
         self._mavSystemID = sysid
         self._mavComponentID = cmpid
+        self._seq = 0
 
         self._writeQueue = queue.PriorityQueue()
 
@@ -116,7 +117,8 @@ class mavThread:
         if not isinstance( msg, self._mavLib.MAVLink_message ):
            return False
 
-        self._writeQueue.put( (priority, msg) )
+        self._writeQueue.put( (priority, self._seq, msg) )
+        self._seq += 1
 
         return True
 
@@ -187,7 +189,7 @@ class mavThread:
     def _getWriteMsg(self):
         try:
             msg = self._writeQueue.get_nowait()
-            return msg[1]
+            return msg[2]
         except queue.Empty:
             return None
 
