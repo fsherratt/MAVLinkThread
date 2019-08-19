@@ -30,7 +30,7 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def __init__( self, listenPort, listenAddress = '', 
-                        broadcastPort = None, broadCastAddress = '255.255.255.255', 
+                        broadcastPort = None, broadcastAddress = '255.255.255.255', 
                         buffSize = 65535, ):
         
         self._sRead = None
@@ -43,7 +43,7 @@ class mavSocket( commAbstract ):
         if broadcastPort is None:
             self._writeAddress = None
         else:
-            self._writeAddress = (socket.gethostbyname(broadCastAddress), int(broadcastPort))
+            self._writeAddress = (socket.gethostbyname(broadcastAddress), int(broadcastPort))
 
         self._writeLock = threading.Lock()
         self._readLock = threading.Lock()
@@ -78,7 +78,7 @@ class mavSocket( commAbstract ):
     # param addr - 2-tuple of address and port
     # return null
     # --------------------------------------------------------------------------
-    def _openWritePort(self, addr):
+    def _openWritePort(self):
         self._sWrite.connect( self._writeAddress )
         self.set_close_on_exec(self._sWrite.fileno())
 
