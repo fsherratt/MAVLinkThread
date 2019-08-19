@@ -13,35 +13,44 @@ from .commAbstract import commAbstract
 import select
 import time
 import sys
+import warnings
 
 class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
     # __init__
     # initialise serialClass object, does not start the serial port. Call
     # openPort once object is initialised to start serial communication.
-    # param broadcastPort - UDP socket broadcast port
-    # param broadcastAddress - UDP socket broadcast address
     # param listenPort - UDP socket listen port
     # param listenAddress - UDP socket listen address
+    # param broadcastPort - UDP socket broadcast port - if None incoming address is used
+    # param broadcastAddress - UDP socket broadcast address
     # param readTimeout - UDP socket read timeout
     # param buffSize - listen UDP socket buffer size
 
     # return void
     # --------------------------------------------------------------------------
-    def __init__( self, port, listenAddress = '', buffSize = 65535, ):
+    def __init__( self, listenPort, listenAddress = '', 
+                        broadcastPort = None, broadCastAddress = '255.255.255.255', 
+                        buffSize = 65535, ):
         
         self._sRead = None
         self._sWrite = None
 
         self.buffSize = buffSize
 
-        self._readAddress = (socket.gethostbyname(listenAddress), int(port))
-        self._writeAddress = None
+        self._readAddress = (socket.gethostbyname(listenAddress), int(listenPort))
+
+        if broadcastPort is None:
+            self._writeAddress = None
+        else:
+            self._writeAddress = (socket.gethostbyname(broadCastAddress), int(broadcastPort))
 
         self._writeLock = threading.Lock()
         self._readLock = threading.Lock()
 
-        self._connected = False
+        self._rConnected = False
+        self._wConnected = False
+
 
     # --------------------------------------------------------------------------
     # openPort
@@ -59,7 +68,9 @@ class mavSocket( commAbstract ):
         self._sWrite.setblocking(0)
         
         self._sRead.bind( self._readAddress )
-        self.set_close_on_exec(self._sRead.fileno())  
+        self.set_close_on_exec(self._sRead.fileno())
+
+        self._rConnected = True
 
     # --------------------------------------------------------------------------
     # _openWritePort
@@ -68,12 +79,10 @@ class mavSocket( commAbstract ):
     # return null
     # --------------------------------------------------------------------------
     def _openWritePort(self, addr):
-        self._writeAddress = addr
-
         self._sWrite.connect( self._writeAddress )
         self.set_close_on_exec(self._sWrite.fileno())
 
-        self._connected = True
+        self._wConnected = True
 
     # --------------------------------------------------------------------------
     # closePort
@@ -94,13 +103,16 @@ class mavSocket( commAbstract ):
     # return tuple of (data, (recieved address)) for each message in buffer
     # --------------------------------------------------------------------------
     def read( self, b = 0 ):
+        if not self._rConnected:
+            raise IOError('Read port not open')
+
         self._readLock.acquire()
 
         try:
             m, addr = self._sRead.recvfrom( self.buffSize )
 
             if self._writeAddress is None:
-                self._openWritePort(addr)
+                self._writeAddress = addr
 
         except(socket.timeout, BlockingIOError):
             m =  ''
@@ -119,13 +131,16 @@ class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
     def write( self, b ):
         if self._writeAddress is None:
+            warnings.warn('Write port not open - message discarded', UserWarning, stacklevel=3)
             return
+            
+        elif not self._wConnected:
+            self._openWritePort()
 
         self._writeLock.acquire()
 
         try:
             self._sWrite.sendto(b, self._writeAddress)
-            # self._sWrite.sendall( b )
             
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -140,7 +155,7 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def isOpen( self ):
-        return self._connected
+        return self._rConnected and self._wConnected
 
     # --------------------------------------------------------------------------
     # dataAvailable
