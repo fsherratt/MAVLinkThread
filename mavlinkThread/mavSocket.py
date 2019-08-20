@@ -62,13 +62,14 @@ class mavSocket( commAbstract ):
         self._sRead = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self._sRead.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
         self._sRead.setblocking(0)
+        self._sRead.bind( self._readAddress )
 
         self._sWrite = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_BROADCAST, 1 )
         self._sWrite.setblocking(0)
         
-        self._sRead.bind( self._readAddress )
         self.set_close_on_exec(self._sRead.fileno())
+        self.set_close_on_exec(self._sWrite.fileno())
 
         self._rConnected = True
 
@@ -80,8 +81,6 @@ class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
     def _openWritePort(self):
         self._sWrite.connect( self._writeAddress )
-        self.set_close_on_exec(self._sWrite.fileno())
-
         self._wConnected = True
 
     # --------------------------------------------------------------------------
@@ -91,10 +90,11 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def closePort( self ):
-        self._connected = False
-
         self._sRead.close()
         self._sWrite.close()
+
+        self._rConnected = False
+        self._wConnected = False
 
     # --------------------------------------------------------------------------
     # read
