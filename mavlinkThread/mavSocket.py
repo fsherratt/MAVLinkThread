@@ -140,7 +140,7 @@ class mavSocket( commAbstract ):
         self._writeLock.acquire()
 
         try:
-            self._sWrite.sendto(b, self._writeAddress)
+            self._sWrite.send(b)
             
         except Exception:
             traceback.print_exc(file=sys.stdout)
