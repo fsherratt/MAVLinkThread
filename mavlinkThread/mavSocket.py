@@ -182,10 +182,9 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def flush( self ):
-        pass
-        # while self.dataAvailable():
-        #     self.read()
-        #     time.sleep(0.01)
+        # Probably need a limit to prevent an infinite loop
+        while self.read() != b'':
+            pass
 
     def set_close_on_exec(self, fd):
         try:
