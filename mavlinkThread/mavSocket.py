@@ -29,7 +29,7 @@ class mavSocket( commAbstract ):
 
     # return void
     # --------------------------------------------------------------------------
-    def __init__( self, listenPort, listenAddress = '', 
+    def __init__( self, listenPort = None, listenAddress = '', 
                         broadcastPort = None, broadcastAddress = '255.255.255.255', 
                         buffSize = 65535, ):
         
@@ -38,8 +38,14 @@ class mavSocket( commAbstract ):
 
         self.buffSize = buffSize
 
-        self._readAddress = (socket.gethostbyname(listenAddress), int(listenPort))
+        if listenPort is None and broadcastPort is None:
+            raise Exception('A port for either listen, broadcast or both is required')
 
+        if listenPort is None:
+            self._readAddress = None
+        else:
+            self._readAddress = (socket.gethostbyname(listenAddress), int(listenPort))
+            
         if broadcastPort is None:
             self._writeAddress = None
         else:
@@ -51,7 +57,6 @@ class mavSocket( commAbstract ):
         self._rConnected = False
         self._wConnected = False
 
-
     # --------------------------------------------------------------------------
     # openPort
     # Open the socket connections specified during __init__
@@ -62,25 +67,43 @@ class mavSocket( commAbstract ):
         self._sRead = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self._sRead.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
         self._sRead.setblocking(0)
-        self._sRead.bind( self._readAddress )
 
         self._sWrite = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
         self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_BROADCAST, 1 )
         self._sWrite.setblocking(0)
-        
+
         self.set_close_on_exec(self._sRead.fileno())
         self.set_close_on_exec(self._sWrite.fileno())
 
+        if self._writeAddress is not None:
+            self._openWritePort()
+
+        if self._readAddress is not None:
+            self._openReadPort() 
+
+    # --------------------------------------------------------------------------
+    # _openReadPort
+    # Open read port
+    # param addr - read address to bind to
+    # return void
+    # --------------------------------------------------------------------------
+    def _openReadPort(self):
+        self._sRead.bind( self._readAddress )
         self._rConnected = True
 
     # --------------------------------------------------------------------------
     # _openWritePort
-    # Once we have a write address we can make a connection
-    # param addr - 2-tuple of address and port
-    # return null
+    # Open write port
+    # param addr - write address to connect to
+    # return void
     # --------------------------------------------------------------------------
     def _openWritePort(self):
         self._sWrite.connect( self._writeAddress )
+
+        # Read port can be deterimened after write connection
+        if self._readAddress is None:
+            self._readAddress = self._sWrite.getsockname()
+
         self._wConnected = True
 
     # --------------------------------------------------------------------------
@@ -112,8 +135,11 @@ class mavSocket( commAbstract ):
     # return tuple of (data, (recieved address)) for each message in buffer
     # --------------------------------------------------------------------------
     def read( self, b = 0 ):
-        if not self._rConnected:
-            raise IOError('Read port not open')
+        if self._readAddress is None:
+            warnings.warn('Read port not open - message discarded', UserWarning, stacklevel=3)
+            return
+        elif not self._rConnected:
+            self._openReadPort()
 
         self._readLock.acquire()
 
@@ -142,7 +168,6 @@ class mavSocket( commAbstract ):
         if self._writeAddress is None:
             warnings.warn('Write port not open - message discarded', UserWarning, stacklevel=3)
             return
-            
         elif not self._wConnected:
             self._openWritePort()
 
