@@ -90,8 +90,17 @@ class mavSocket( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def closePort( self ):
-        self._sRead.close()
-        self._sWrite.close()
+        try:
+            self._sRead.close()
+            self._sRead.shutdown()
+        except:
+            pass
+        
+        try:
+            self._sWrite.close()
+            self._sWrite.shutdown()
+        except:
+            pass
 
         self._rConnected = False
         self._wConnected = False
