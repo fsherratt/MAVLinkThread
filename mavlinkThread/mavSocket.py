@@ -124,7 +124,7 @@ class mavSocket( commAbstract ):
                 self._writeAddress = addr
 
         except(socket.timeout, BlockingIOError):
-            m =  ''
+            m =  b''
 
         finally:
             self._readLock.release()
