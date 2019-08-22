@@ -31,12 +31,13 @@ class mavSocket( commAbstract ):
     # --------------------------------------------------------------------------
     def __init__( self, listenPort = None, listenAddress = '', 
                         broadcastPort = None, broadcastAddress = '255.255.255.255', 
-                        buffSize = 65535, ):
+                        buffSize = 65535, INET_type= socket.AF_INET ):
         
         self._sRead = None
         self._sWrite = None
 
         self.buffSize = buffSize
+        self.INET_type = INET_type
 
         if listenPort is None and broadcastPort is None:
             raise Exception('A port for either listen, broadcast or both is required')
@@ -64,11 +65,11 @@ class mavSocket( commAbstract ):
     # return raises an exception if there is an error
     # --------------------------------------------------------------------------
     def openPort( self ):
-        self._sRead = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        self._sRead = socket.socket( self.INET_type, socket.SOCK_DGRAM )
         self._sRead.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
         self._sRead.setblocking(0)
 
-        self._sWrite = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        self._sWrite = socket.socket( self.INET_type, socket.SOCK_DGRAM )
         self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_BROADCAST, 1 )
         self._sWrite.setblocking(0)
 
