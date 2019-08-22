@@ -142,6 +142,7 @@ class mavSerial( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def flush( self ):
-        pass
+        self._serialObj.flushInput()
+        self._serialObj.flushOutput()
 
 # ------------------------------------ EOF -------------------------------------
