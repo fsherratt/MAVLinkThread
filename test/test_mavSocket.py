@@ -99,8 +99,7 @@ class Test_DualSocketConnection(unittest.TestCase):
         self.testBytes = b'Hello, World!'
 
         # A should discover listen address from itself
-        self.commA = commObj(  broadcastPort=self.testPort, broadcastAddress=self.testHost,
-                               listenAddress=self.testHost )
+        self.commA = commObj(  broadcastPort=self.testPort, broadcastAddress=self.testHost )
         self.commA.openPort()
 
         # B should discover boradcast address from A
@@ -159,6 +158,6 @@ class Test_DualSocketConnection(unittest.TestCase):
 
         self.assertEqual(self.testBytes, bytesIn)
 
-
+        
 if __name__ == '__main__':
     unittest.main()
