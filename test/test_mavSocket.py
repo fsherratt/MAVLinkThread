@@ -1,14 +1,17 @@
 import unittest
 import socket
 import time
+import os
+import sys
+
+sys.path.append(os.path.abspath('') + '..')
 
 from mavlinkThread.mavSocket import mavSocket as commObj
 
 class Test_SocketObjectCreation(unittest.TestCase):
     def setUp(self):
         # Setup reflective port - written data appears on read port
-        self.testPortA = 10000
-        self.testHostA = ''
+        self.testAddressA = ('localhost', 10000)
 
         return super().setUp()
 
@@ -16,19 +19,12 @@ class Test_SocketObjectCreation(unittest.TestCase):
         self.assertEqual(1,1)
 
     def test_objectedExsists(self):
-        comm = commObj( listenPort=self.testPortA )
+        comm = commObj( self.testAddressA )
         self.assertIsInstance(comm, commObj)
-
-    def test_portStored(self):
-        # Check that read address is stored
-        comm = commObj( listenPort=self.testPortA, listenAddress=self.testHostA )
-
-        testAddress = (socket.gethostbyname(self.testHostA), int(self.testPortA))
-        self.assertEqual( testAddress, comm._readAddress )
         
     def test_notConnected(self):
         # Connected should not occur before port is opened
-        comm = commObj( listenPort=self.testPortA )
+        comm = commObj( self.testAddressA )
         
         self.assertEqual( comm.isOpen(), False )
 
@@ -36,14 +32,11 @@ class Test_SocketObjectCreation(unittest.TestCase):
 class Test_ReflectiveSocketObject(unittest.TestCase):
     def setUp(self):
         # Setup reflective port - written data appears on read port
-        self.testPortA = 10000
-        self.testHostA = 'localhost'
+        self.testAddressA = ('localhost', 10000)
 
-        self.testPortB = self.testPortA
-        self.testHostB = self.testHostA
+        self.testAddressB = self.testAddressA
 
-        self.comm = commObj( listenPort=self.testPortA, listenAddress=self.testHostA, 
-                        broadcastPort=self.testPortB, broadcastAddress=self.testHostB )
+        self.comm = commObj( self.testAddressA, self.testAddressB )
 
         self.testBytes = b'Hello, World!'
 
@@ -89,21 +82,19 @@ class Test_ReflectiveSocketObject(unittest.TestCase):
         
         self.assertEqual(b'', bytesIn)
 
-
 class Test_DualSocketConnection(unittest.TestCase):
     def setUp(self):
         # Setup dual port - pointing at each other
-        self.testPort = 10000
-        self.testHost = 'localhost'
+        self.testAddressA = ('localhost', 10000)
 
         self.testBytes = b'Hello, World!'
 
         # A should discover listen address from itself
-        self.commA = commObj(  broadcastPort=self.testPort, broadcastAddress=self.testHost )
+        self.commA = commObj( broadcastAddress=self.testAddressA )
         self.commA.openPort()
 
         # B should discover boradcast address from A
-        self.commB = commObj( listenPort=self.testPort, listenAddress=self.testHost )
+        self.commB = commObj( listenAddress=self.testAddressA )
         self.commB.openPort()
 
         return super().setUp()
@@ -158,6 +149,29 @@ class Test_DualSocketConnection(unittest.TestCase):
 
         self.assertEqual(self.testBytes, bytesIn)
 
+class Test_AF_UNIX(Test_DualSocketConnection):
+    def setUp(self):
+        # Setup dual port - pointing at each other
+        self.testAddressA = os.path.abspath('') + '/.test1'
+
+        if os.path.exists(self.testAddressA):
+            os.remove(self.testAddressA)
+
+        fd1, fd2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+
+        self.testBytes = b'Hello, World!'
+
+        # B should discover boradcast address from A
+        self.commB = commObj( listenAddress=self.testAddressA )
+        self.commB.AF_type( socket.AF_UNIX )
+        self.commB.SOCK_type( socket.SOCK_STREAM )
+        self.commB.openPort()
+
+        # A should discover listen address from itself
+        self.commA = commObj( broadcastAddress=self.testAddressA )
+        self.commA.AF_type( socket.AF_UNIX )
+        self.commA.SOCK_type( socket.SOCK_STREAM )
+        self.commA.openPort()
         
 if __name__ == '__main__':
     unittest.main()
