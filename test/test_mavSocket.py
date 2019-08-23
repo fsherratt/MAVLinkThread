@@ -4,7 +4,7 @@ import time
 import os
 import sys
 
-sys.path.append(os.path.abspath('') + '..')
+sys.path.append(os.path.abspath(''))
 
 from mavlinkThread.mavSocket import mavSocket as commObj
 
@@ -85,7 +85,7 @@ class Test_ReflectiveSocketObject(unittest.TestCase):
 class Test_DualSocketConnection(unittest.TestCase):
     def setUp(self):
         # Setup dual port - pointing at each other
-        self.testAddressA = ('localhost', 10000)
+        self.testAddressA = ('127.0.0.1', 10000)
 
         self.testBytes = b'Hello, World!'
 
@@ -149,29 +149,33 @@ class Test_DualSocketConnection(unittest.TestCase):
 
         self.assertEqual(self.testBytes, bytesIn)
 
+
 class Test_AF_UNIX(Test_DualSocketConnection):
     def setUp(self):
         # Setup dual port - pointing at each other
-        self.testAddressA = os.path.abspath('') + '/.test1'
+        self.testAddressA = os.path.abspath('') + '/.testA'
 
         if os.path.exists(self.testAddressA):
             os.remove(self.testAddressA)
-
-        fd1, fd2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
 
         self.testBytes = b'Hello, World!'
 
         # B should discover boradcast address from A
         self.commB = commObj( listenAddress=self.testAddressA )
-        self.commB.AF_type( socket.AF_UNIX )
-        self.commB.SOCK_type( socket.SOCK_STREAM )
+        self.commB.set_AF_type( socket.AF_UNIX )
+        # self.commB.set_SOCK_type( socket.SOCK_STREAM )
         self.commB.openPort()
 
         # A should discover listen address from itself
         self.commA = commObj( broadcastAddress=self.testAddressA )
-        self.commA.AF_type( socket.AF_UNIX )
-        self.commA.SOCK_type( socket.SOCK_STREAM )
+        self.commA.set_AF_type( socket.AF_UNIX )
+        # self.commA.set_SOCK_type( socket.SOCK_STREAM )
         self.commA.openPort()
+
+    def tearDown(self):
+        os.remove(self.testAddressA)
+
+        return super().tearDown()
         
 if __name__ == '__main__':
     unittest.main()
