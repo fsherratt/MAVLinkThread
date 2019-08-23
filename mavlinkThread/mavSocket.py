@@ -79,6 +79,7 @@ class mavSocket( commAbstract ):
         self._sRead.setblocking(0)
 
         self._sWrite = socket.socket( self.AF_type, self.SOCK_type )
+        self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
         self._sWrite.setsockopt( socket.SOL_SOCKET, socket.SO_BROADCAST, 1 )
         self._sWrite.setblocking(0)
 
