@@ -137,6 +137,8 @@ class Test_DualSocketConnection(unittest.TestCase):
     def test_addressDiscovery(self):
         # Test that commB can respond to commA after learning address
         self.commA.write(self.testBytes)
+        # To bind to a discovered read port a read command must be sent
+        self.commA.read()
         time.sleep(0.01)
 
         # Discover connection and respond
@@ -150,32 +152,51 @@ class Test_DualSocketConnection(unittest.TestCase):
         self.assertEqual(self.testBytes, bytesIn)
 
 
-class Test_AF_UNIX(Test_DualSocketConnection):
+class Test_AF_UNIX(unittest.TestCase):
     def setUp(self):
         # Setup dual port - pointing at each other
         self.testAddressA = os.path.abspath('') + '/.testA'
-
-        if os.path.exists(self.testAddressA):
-            os.remove(self.testAddressA)
+        self.testAddressB = os.path.abspath('') + '/.testB'
 
         self.testBytes = b'Hello, World!'
 
         # B should discover boradcast address from A
-        self.commB = commObj( listenAddress=self.testAddressA )
+        self.commB = commObj( listenAddress=self.testAddressA, broadcastAddress=self.testAddressB )
         self.commB.set_AF_type( socket.AF_UNIX )
-        # self.commB.set_SOCK_type( socket.SOCK_STREAM )
         self.commB.openPort()
 
         # A should discover listen address from itself
-        self.commA = commObj( broadcastAddress=self.testAddressA )
+        self.commA = commObj( broadcastAddress=self.testAddressA, listenAddress=self.testAddressB )
         self.commA.set_AF_type( socket.AF_UNIX )
-        # self.commA.set_SOCK_type( socket.SOCK_STREAM )
         self.commA.openPort()
 
+        return super().setUp()
+
     def tearDown(self):
-        os.remove(self.testAddressA)
+        self.commA.closePort()
+        self.commB.closePort()
 
         return super().tearDown()
+
+    def test_notConnected2(self):
+        # CommB should not connect until is recieves a message from A and tries to respond
+        self.assertFalse(self.commB.isOpen())
+
+    def test_readIn2(self):
+        # Test data is read in correctly
+        self.commA.write(self.testBytes)
+        time.sleep(0.01)
+        bytesIn = self.commB.read()
+
+        self.assertEqual(self.testBytes, bytesIn)
+
+    def test_notconnected3(self):
+        # CommB should not connect until is recieves a message from A and tries to write back
+        self.commA.write(self.testBytes)
+        time.sleep(0.01)
+        self.commB.read()
+
+        self.assertFalse(self.commB.isOpen())
         
 if __name__ == '__main__':
     unittest.main()
