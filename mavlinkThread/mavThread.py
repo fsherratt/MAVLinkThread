@@ -46,7 +46,7 @@ class mavThread:
     # param cmpid - MAVLink component ID
     # return void
     # --------------------------------------------------------------------------
-    def __init__( self, conn, mavLib, shortHand = '', sysid = 1, cmpid = 1 ):
+    def __init__( self, conn, mavLib):
         
         if isinstance( conn, commAbstract ):
             self._ser = conn
@@ -55,12 +55,8 @@ class mavThread:
 
         self._mavLib = mavLib
 
-        self._name = shortHand
         self.loopPauseSleepTime = 0.5
         self.noRWSleepTime = 0.1
-
-        self._mavSystemID = sysid
-        self._mavComponentID = cmpid
         self._seq = 0
 
         self._writeQueue = queue.PriorityQueue()
@@ -68,9 +64,7 @@ class mavThread:
         self._intentionallyExit = False
         
         try:
-            self._mavObj = self._mavLib.MAVLink( file = self._ser,
-                                              srcSystem = self._mavSystemID,
-                                              srcComponent = self._mavComponentID )
+            self._mavObj = self._mavLib.MAVLink( file = self._ser, srcSystem = 20, srcComponent = 1 )
         except:
             raise Exception( 'Unable to create mavlink interface' )
 
@@ -84,6 +78,10 @@ class mavThread:
     def srcSystem( self ):
         return self._mavObj.srcSystem
 
+    @srcSystem.setter
+    def srcSystem(self, sysid ):
+        self._mavObj.srcSystem = sysid
+
     # --------------------------------------------------------------------------
     # srcComponent (getter)
     # Retrieve MAVLink component ID
@@ -93,6 +91,10 @@ class mavThread:
     @property
     def srcComponent( self ):
         return self._mavObj.srcComponent
+
+    @srcComponent.setter
+    def srcComponent(self, cmpid):
+        self._mavObj.srcComponent = cmpid
 
     # --------------------------------------------------------------------------
     # stopRWLoop
