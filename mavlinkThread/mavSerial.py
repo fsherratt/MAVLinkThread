@@ -29,14 +29,11 @@ class mavSerial( commAbstract ):
     # return void
     # --------------------------------------------------------------------------
     def __init__( self, serialPortAddress, baudrate = 57600 ):
-
-        self._readTimeout = 0.01
-
         self._serialObj = serial.Serial()
 
         self._serialObj.port = serialPortAddress
         self._serialObj.baudrate = baudrate
-        self._serialObj.timeout = readtimeout
+        self._serialObj.timeout = 0.01
         self._serialObj.write_timeout = 3
 
         self._writeLock = threading.Lock()
