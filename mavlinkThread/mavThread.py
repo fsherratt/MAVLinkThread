@@ -163,7 +163,7 @@ class mavThread:
                 traceback.print_exc(file=sys.stdout)
                 raise Exception('MAVLink thread exited unexpectedly')
 
-        print('MAVLink thread %s closed' % self._name)
+        print('MAVLink thread closed')
 
 
     # --------------------------------------------------------------------------
@@ -237,7 +237,7 @@ class mavThread:
         while True:
             try:
                 x = self._ser.read()
-                if x == '':
+                if x == b'':
                     break
 
                 mList = self._mavObj.parse_buffer(x)
