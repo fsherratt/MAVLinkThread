@@ -95,12 +95,13 @@ class mavSocket( commAbstract ):
     # param none
     # return void
     # --------------------------------------------------------------------------
-    def _openReadPort(self):
-        if self._readAddress is None:
+    def _openReadPort(self) -> bool:
+        if self._rConnected:
+            return True
+
+        elif self._readAddress is None:
             warnings.warn('Read address not specified - message discarded', UserWarning, stacklevel=3)
-            return
-        elif self._rConnected:
-            return
+            return False
 
         self._sRead = socket.socket( self.AF_type, self.SOCK_type, )
 
@@ -115,18 +116,21 @@ class mavSocket( commAbstract ):
         self._sRead.bind( self._readAddress )
         self._rConnected = True
 
+        return True
+
     # --------------------------------------------------------------------------
     # _openWritePort
     # Open write port
     # param none
     # return void
     # --------------------------------------------------------------------------
-    def _openWritePort(self):
-        if self._writeAddress is None:
-            warnings.warn('Write address not specified - message discarded', UserWarning, stacklevel=3)
-            return
-        elif self._wConnected:
-            return
+    def _openWritePort(self) -> bool:
+        if self._wConnected:
+            return True
+
+        elif self._writeAddress is None:
+            warnings.warn('Write address not yet known', UserWarning, stacklevel=3)
+            return False
 
         self._sWrite = socket.socket( self.AF_type, self.SOCK_type )
 
@@ -145,6 +149,8 @@ class mavSocket( commAbstract ):
             self._readAddress = self._sWrite.getsockname()
 
         self._wConnected = True
+
+        return True
 
     # --------------------------------------------------------------------------
     # closePort
@@ -185,7 +191,8 @@ class mavSocket( commAbstract ):
     # return tuple of (data, (recieved address)) for each message in buffer
     # --------------------------------------------------------------------------
     def read( self, b = 0 ):
-        self._openReadPort()
+        if not self._openReadPort():
+            return b''
 
         self._readLock.acquire()
 
@@ -211,7 +218,8 @@ class mavSocket( commAbstract ):
     # return raises an Exception if there is an error
     # --------------------------------------------------------------------------
     def write( self, b ):
-        self._openWritePort()
+        if not self._openWritePort():
+            return
 
         self._writeLock.acquire()
 
