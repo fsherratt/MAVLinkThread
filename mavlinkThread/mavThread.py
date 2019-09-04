@@ -222,7 +222,7 @@ class mavThread:
             pass
 
         except self._mavLib.MAVError as e:
-            print('%s' % e)
+            print(e)
 
         return False
 
@@ -234,7 +234,7 @@ class mavThread:
     # buffer empty, Exception if an error occurs
     # --------------------------------------------------------------------------
     def _readMsg( self ):
-        mList = None
+        mList = []
 
         while True:
             try:
@@ -242,10 +242,13 @@ class mavThread:
                 if x == b'':
                     break
 
-                mList = self._mavObj.parse_buffer(x)
+                msg = self._mavObj.parse_buffer(x)
+
+                if len(msg) > 0:
+                    mList.extend( msg )
                 
             except self._mavLib.MAVError as e:
-                print( e )
+                print(e)
 
         return mList
 
