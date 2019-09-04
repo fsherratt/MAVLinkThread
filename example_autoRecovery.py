@@ -40,7 +40,7 @@ class mavClass( mavThread.mavThread ):
 
 if __name__ == "__main__":
     # Open serial port connection
-    serialObj = mavSerial.mavSerial( '/dev/ttyu1' )
+    serialObj = mavSerial.mavSerial( ('/dev/ttyu1', 57600) )
     serialObj.openPort()
 
     # Create mavlink thread object

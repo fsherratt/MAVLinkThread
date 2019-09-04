@@ -8,7 +8,7 @@ from mavlinkThread.mavSerial import mavSerial as commObj
 class Test_SocketObjectCreation(unittest.TestCase):
     def setUp(self):
         # Setup reflective port - written data appears on read port
-        self.testAddress = '/dev/ttys1'
+        self.testAddress = ('/dev/ttys1', 57600)
 
         return super().setUp()
 
@@ -27,7 +27,7 @@ class Test_SocketObjectCreation(unittest.TestCase):
 
 class Test_SingledEndedPort(unittest.TestCase):
     def setUp(self):
-        self.testAddress = '/dev/ttys1'
+        self.testAddress = ('/dev/ttys1', 57600)
 
         self.commA = commObj( serialPortAddress=self.testAddress )
         self.commA.openPort()
@@ -55,8 +55,8 @@ class Test_SingledEndedPort(unittest.TestCase):
 
 class Test_DualPorts(unittest.TestCase):
     def setUp(self):
-        self.testAddressA = '/dev/ttys1'
-        self.testAddressB = '/dev/ptys1'
+        self.testAddressA = ('/dev/ttys1', 57600)
+        self.testAddressB = ('/dev/ptys1', 57600)
 
         self.commA = commObj( serialPortAddress=self.testAddressA )
         self.commA.openPort()
