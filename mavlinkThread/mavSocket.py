@@ -73,7 +73,7 @@ class mavSocket( commAbstract ):
     def openPort( self ):
         self._openReadPort() 
 
-        if not None and self.isUDP():
+        if self.isUDP():
             self._openWritePort()
 
     # --------------------------------------------------------------------------
