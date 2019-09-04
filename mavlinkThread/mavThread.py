@@ -143,18 +143,7 @@ class mavThread:
         while not self._intentionallyExit:
             try:
                 
-                rMsg = self._readMsg()
-                wMsg = self._getWriteMsg()
-
-                if rMsg is None and wMsg is None:
-                    time.sleep( self.noRWSleepTime)
-                    continue
-
-                if rMsg is not None:
-                    self._processReadMsg(rMsg)
-
-                if wMsg is not None:
-                    self._writeMsg(wMsg)
+                self._loopInternals()
 
             except KeyboardInterrupt:
                 break
@@ -165,10 +154,23 @@ class mavThread:
 
         print('MAVLink thread closed')
 
-
     # --------------------------------------------------------------------------
     # Private function definitions
     # --------------------------------------------------------------------------
+
+    def _loopInternals( self ):
+        rMsg = self._readMsg()
+        wMsg = self._getWriteMsg()
+
+        if rMsg is None and wMsg is None:
+            time.sleep( self.noRWSleepTime)
+            return
+
+        if rMsg is not None:
+            self._processReadMsg(rMsg)
+
+        if wMsg is not None:
+            self._writeMsg(wMsg)
 
     # --------------------------------------------------------------------------
     # _processReadMsg
