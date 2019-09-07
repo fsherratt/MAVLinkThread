@@ -244,7 +244,7 @@ class mavThread:
 
                 msg = self._mavObj.parse_buffer(x)
 
-                if len(msg) > 0:
+                if msg is not None:
                     mList.extend( msg )
                 
             except self._mavLib.MAVError as e:
