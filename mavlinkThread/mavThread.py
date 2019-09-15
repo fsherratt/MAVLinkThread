@@ -119,9 +119,9 @@ class mavThread:
         if not isinstance( msg, self._mavLib.MAVLink_message ):
            return False
 
-        self._writeQueue.put( (priority, self._seq, msg) )
+        # self._writeQueue.put( copy.deepcopy((priority, self._seq, msg)) )
         self._seq += 1
-
+        self._writeMsg(msg)
         return True
 
     # --------------------------------------------------------------------------
@@ -214,7 +214,7 @@ class mavThread:
 
             self._ser.write( b )
 
-            self._writeQueue.task_done()
+            # self._writeQueue.task_done()
 
             return True
 
