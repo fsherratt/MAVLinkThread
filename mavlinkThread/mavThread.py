@@ -148,9 +148,8 @@ class mavThread:
             except KeyboardInterrupt:
                 break
 
-            except Exception:
+            except:
                 traceback.print_exc(file=sys.stdout)
-                raise Exception('MAVLink thread exited unexpectedly')
 
         print('MAVLink thread closed')
 
